@@ -5,10 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "chromadb>=1.0.9",
+    "kokoro>=0.9.4",
     "langchain-community>=0.3.23",
     "langchain-core>=0.3.58",
     "langchain-huggingface>=0.1.2",
     "langchain-ollama>=0.3.2",
+    "openai-whisper>=20240930",
     "pandas>=2.2.3",
+    "pip>=25.1.1",
+    "pvporcupine>=3.0.5",
+    "pyaudio>=0.2.14",
+    "pyttsx3>=2.98",
     "soundfile>=0.13.1",
 ]
