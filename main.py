@@ -2,18 +2,17 @@ import os
 import warnings
 import shutil
 import pyaudio
-import pyttsx3
 import whisper
 import numpy as np
 import pandas as pd
-import soundfile as sf
 import json
+import tempfile
 from vosk import Model, KaldiRecognizer
+from TTS.api import TTS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_ollama import ChatOllama
 from langchain_core.documents import Document
-from kokoro import KPipeline
 
 warnings.filterwarnings("ignore")
 
@@ -55,13 +54,16 @@ else:
     vector_store = rebuild_chroma_index()
 
 llm = ChatOllama(model="llama3.2:latest")
-pipeline = KPipeline(lang_code='a')
 
-tts_engine = pyttsx3.init()
+tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
 
 def speak(text):
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    """Use Coqui TTS for real-time streaming speech output."""
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
+        temp_path = temp_file.name
+    tts.tts_to_file(text=text, file_path=temp_path)
+    os.system(f"afplay {temp_path}")
+    os.unlink(temp_path)
 
 def query_inventory(question):
     docs = vector_store.max_marginal_relevance_search(question,k=3,fetch_k=8)
@@ -114,12 +116,6 @@ def query_inventory(question):
         
     response = llm.invoke(prompt)
     answer = response.content.strip()
-    
-    generator = pipeline(answer, voice='af_heart')
-    for i, (gs, ps, audio) in enumerate(generator):
-        output_file = os.path.join(output_folder, f"answer_{i}.wav")
-        sf.write(output_file, audio, 24000)
-        print(f"Audio saved to {output_file}")
     return answer
 
 model_path = "models/vosk-model"
@@ -129,7 +125,7 @@ pa = pyaudio.PyAudio()
 RATE = 16000 
 audio_stream = pa.open(rate=RATE,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=4096)
 
-whisper_model = whisper.load_model("tiny")
+whisper_model = whisper.load_model("small")
 
 def listen_for_wake_word():
     print("Listening for wake word ('sandy')...")
