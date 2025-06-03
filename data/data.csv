@@ -1,0 +1,173 @@
+Name of the component,Location,Quantity
+Sensor / Ultrasonic / HC-SR04,SD6,92
+PCB Dot Board,SB3,63
+Prototype board,SB3,3
+Diodes,SD2,150
+Buzzer,SA1,9
+Load sensor 50kg(strain gauge),SA1,3
+Load sensor 40kg,SA1,1
+Load sensor 10kg,SA1,1
+Load sensor 5kg,SA1,3
+ADC board,SA1,2
+Dust sensor,SA1,3
+Battery holder AA 2cells,SA2,22
+Battery holder AA 1 cell,SA2,8
+Battery holder AA 2cells,SA2,10
+Connector cable DC jack female,SA2,7
+RS232,SD3,7
+RTC Module,SD3,2
+USB to TTL,SD3,26
+RS232 to TTL,SD3,11
+Heat sink(IC),SA3,23
+Converter board hdmi-hdmi,SA3,5
+Converter hdmi-dvi,SA3,10
+Casing rpi,SA4,9
+Casing rpi pico,SA4,2
+FRC cable,SA5,4
+Rpi camera,SA5,1
+Cable instrument test line,SB1,4
+ESD ground cord,SB1,4
+Grounding wrist wrap,SB1,2
+Banana cable,SB1,2
+Banana connector,SB1,1
+LORA development kit,SJ1,12
+DTMF Decoder,SJ1,7
+Dual motor driver,SJ1,3
+Bluetooth module,SJ1,25
+Zigbee module,SD7,10
+Shield (ethernet for arduino),SB2,10
+SHIELD for ardiuno L293d-r1,SB2,2
+SHIELD for ardiuno L293d,SB2,3
+SIM 800 A,SB2,3
+SIM 808 GSM-GPS modem,SB2,2
+SIM 900 GSM,SB2,2
+ARDUINO GSM 2 SHIELD,SB2,1
+PLC modem,SB5,4
+Weather shield,SB5,1
+ESP 12 development board,SB5,3
+CAN bus shield,SB5,3
+CNC shield,SB5,3
+Odroid xu4 shield,SB5,4
+Berge pins/male,SG2,250
+Berge pins/female,SG2,240
+IC Base,SG2,180
+Step up boost transformer,SC1,1
+Load sensor 20kg,SA1,1
+Step down,SC1,2
+BSM 2 s,SC1,3
+Voltage regulator,SC1,1
+Rpi Gpio 40 pin cable,SC2,13
+T shaped rpi extension board,SC2,12
+U shaped rpi extension board,SC2,9
+7 segment display,SC4,92
+RF 434 MHz TX & RX,SC4,40
+Shield Xbee,SC4,2
+GPS receiver,SC4,3
+GPS Shield,SC4,1
+Voltage sensor,SI1,7
+Current sensor,SI1,9
+TTL RS 485,SI1,2
+Convertor DC-DC 5V,SI1,2
+DC shunt,SI1,2
+CAN /MSP2551,SI1,4
+Connector ferrule crimp,SI4,65
+Connector DC jack male,SI4,27
+Connector 3.5 mm jack,SI4,5
+Banana plug,SI4,3
+Connector XLR female,SI4,5
+Connector rs232,SI4,19
+Connector t plug,SI4,2
+Connector DC jack,SI4,26
+RTC module,SD3,10
+USB TTL (FTDI),SD3,22
+Mini USB TTL,SD3,3
+RS232 to TTL,SD3,7
+Super debug RS232 to TTL,SD3,2
+Touch sensor,SD8,20
+RFID kit,SD9,14
+RFID kit,SD9,12
+Temperature sensor,SH7,2
+Thermocouple,SH7,4
+Wheel bearing,SH7,2
+Fingerprint sensor,SH7,2
+Piezo magnetic buzzer 3V,SH7,135
+DC buzzer,SH7,1
+Pressure sensor,SH7,1
+Diode bridge,SH7,3
+PIR motion sensor,SH1,30
+Microphone sensor,SH1,19
+Humidity sensor,SH1,5
+SD module (blue),SH1,9
+SD module (white),SH1,72
+Relay Hat,SG5,5
+HLK,SG5,6
+Relay,SG5,4
+Horn relay,SG5,1
+HE Relay,SG5,51
+5V Relay,SG5,4
+HL,SG5,37
+Tongling,SG5,4
+DPDT,SD1,33
+DPDT (small),SD1,15
+Indicator switch,SD1,60
+Push button,SD1,136
+Fuse holder,SD1,9
+Push button (Horn switch),SD1,30
+Toggle switch,SD1,29
+Keypad,SH4,24
+Digital touch sensor module,SH4,2
+RS PRO blue insulated female space connector,SH4,57
+Screw terminal 3pin,SH4,32
+Screw terminal 2pin,SH4,54
+Potentiometer (1k),SG1,73
+Potentiometer (100k),SG1,60
+Potentiometer (10k),SG1,217
+Potentiometer (5k),SG1,2
+Potentiometer (470k),SG1,2
+Potentiometer (47k),SG1,17
+Potentiometer (22k),SG1,21
+Potentiometer (220k),SG1,14
+Potentiometer (50 ohm),SG1,1
+Potentiometer (tm 1),SG1,1
+Nut,SG1,65
+Lora board,SH5,5
+GPS module,SH5,2
+Monitor board,SH5,1
+Transceiver module,SH5,3
+Adapter board,SH5,5
+Joystick,SH6,33
+Transformer coil,SH6,16
+DC Toy Motor (12v),SG3,4
+Stepper motor (12v),SG3,6
+Stepper motor (5v),SG3,41
+DC motor,SG3,99
+Dual shaft BO motor,SG3,26
+Bi polar junction transistor,SH2,28
+IC,SH2,40
+Laser light cable,SH2,32
+Water sensor,SC3,10
+Raindrop module,SC3,6
+Reed switch magnetic control,SC3,12
+Linear hall magnetic,SC3,2
+Thermistor sensor,SC3,3
+Touch sensor module,SC3,1
+LDR,SC3,2
+Soil moisture module,SC3,35
+Reed switch sensor,SC3,3
+NTC thermal,SC3,1
+Soil moisture sensor,SC3,33
+Sensor MPU6050,SD4,77
+Sensor color,SD4,9
+Sensor axis /gyroscopic,SD4,31
+Sensor - highly sensitive vibrational sensor,SD4,6
+Sensor - light intensity,SD4,10
+Sensor barometric,SD4,1
+Sensor - gyroscopic,SD4,1
+Motor driver module 30 A,SG5,11
+Motor driver module 15 A,SG5,2
+Motor driver stepper,SG5,3
+Motor driver stepper (small),SG5,4
+Motor Speed regulator,SG5,5
+Motor driver amp unknown,SG5,10
+Shield/esp,SG5,4
+Gas sensor MQ135,SD5,23

@@ -1,135 +1,104 @@
 import os
-import warnings
-import shutil
 import pyaudio
-import whisper
 import numpy as np
-import pandas as pd
 import json
 import tempfile
+import logging
 from vosk import Model, KaldiRecognizer
-from TTS.api import TTS
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_ollama import ChatOllama
-from langchain_core.documents import Document
 
-warnings.filterwarnings("ignore")
+from src.ttsprocessor import TTS
+from src.sttprocessor import STT
+from src.ragprocessor import RAGProcessor
 
-csv_file_path = "data/inv_data.csv"
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+csv_file_path = "data/data.csv"
 chroma_directory = "chroma_db"
-output_folder = "outputs"
-os.makedirs(output_folder, exist_ok=True)
+model_path = "models/vosk-model"
 
-embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+print("Loading models into memory...")
 
-def rebuild_chroma_index():
-    print("Rebuilding Chroma index from CSV data...")
-    if os.path.exists(chroma_directory):
-        shutil.rmtree(chroma_directory)
-    df = pd.read_csv(csv_file_path)
-    df = df.fillna('')
-    documents = []
-    for _, row in df.iterrows():
-        metadata = {k: str(v) for k, v in row.items() if v and str(v).strip() and k != "Category"}
-        content_parts = []
-        for col, val in row.items():
-            if col != "Category" and pd.notna(val) and str(val).strip():
-                content_parts.append(f"{col}: {val}")
-        content = "\n".join(content_parts)
-        documents.append(Document(page_content=content, metadata=metadata))
-    vector_store = Chroma.from_documents(documents,embedding_model,persist_directory=chroma_directory)
-    vector_store.persist()
-    print(f"Created and saved new Chroma index with {len(documents)} documents.")
-    return vector_store
+print("1/5 Loading RAG processor...")
+rag_processor = RAGProcessor(csv_file_path, chroma_directory)
 
-if os.path.exists(chroma_directory) and os.listdir(chroma_directory):
-    try:
-        vector_store = Chroma(persist_directory=chroma_directory, embedding_function=embedding_model)
-        print("Loaded existing Chroma vector database.")
-    except Exception as e:
-        print(f"Error loading existing database: {e}")
-        vector_store = rebuild_chroma_index()
-else:
-    vector_store = rebuild_chroma_index()
+print("2/5 Loading LLM model...")
+llm = ChatOllama(model="qwen2.5:0.5b-instruct-q4_0")
 
-llm = ChatOllama(model="llama3.2:latest")
+print("3/5 Loading Vosk model...")
+vosk_model = Model(model_path)
 
-tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
+print("4/5 Loading optimized Whisper model...")
+whisper_transcriber = STT(
+    model_size="base",
+    device=None,  
+    compute_type=None,
+    beam_size=1,
+    sample_rate=16000
+)
+
+print("5/5 Loading Kokoro TTS model into memory...")
+tts_client = TTS(
+    lang_code='a',
+    voice="af_sky",
+    sample_rate=24000,
+    speed=1.0
+)
+
+print("All models loaded successfully!")
+
+print("Initializing audio system...")
+pa = pyaudio.PyAudio()
+RATE = 16000 
+CHUNK_SIZE = 2048
+audio_stream = pa.open(
+    rate=RATE,
+    channels=1,
+    format=pyaudio.paInt16,
+    input=True,
+    frames_per_buffer=CHUNK_SIZE
+)
+
+print("Audio system initialized.")
+print("Vector database ready.")
+print("All systems initialized. Voice assistant is ready!")
 
 def speak(text):
-    """Use Coqui TTS for real-time streaming speech output."""
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-        temp_path = temp_file.name
-    tts.tts_to_file(text=text, file_path=temp_path)
-    os.system(f"afplay {temp_path}")
-    os.unlink(temp_path)
+    """Use optimized TTS client for text-to-speech."""
+    try:
+        audio_data = tts_client.text_to_speech(text)
+        
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
+            temp_path = temp_file.name
+            temp_file.write(audio_data)
+        
+        os.system(f"afplay {temp_path}")
+        os.unlink(temp_path)
+        
+    except Exception as e:
+        logger.error(f"TTS Error: {e}")
+        print(f"TTS Error: {e}")
 
 def query_inventory(question):
-    docs = vector_store.max_marginal_relevance_search(question,k=3,fetch_k=8)
+    # Get inventory data from RAG processor
+    context = rag_processor.query_inventory(question)
     
-    components = []
-    for i, doc in enumerate(docs):
-        component_data = {"ComponentID": f"Item {i+1}","S.No": doc.metadata.get("S.No", "N/A")}
-        
-        for line in doc.page_content.strip().split('\n'):
-            if ':' in line:
-                parts = line.split(':', 1)
-                if len(parts) == 2:
-                    key, value = parts
-                    component_data[key.strip()] = value.strip()
-        
-        components.append(component_data)
-    
-    formatted_components = []
-    for i, comp in enumerate(components):
-        lines = []
-        for field in ["Name of the component", "Location", "Quantity", "Category"]:
-            if field in comp and comp[field]:
-                lines.append(f"- {field}: {comp[field]}")
-        
-        for k, v in comp.items():
-            if k not in ["Name of the component", "Location", "Quantity", "Category", "ComponentID", "S.No"] and v:
-                lines.append(f"- {k}: {v}")
-                
-        formatted_comp = f"Component {comp['S.No']}:\n" + "\n".join(lines)
-        formatted_components.append(formatted_comp)
+    # Create prompt for LLM
+    prompt = f"""Inventory data:
+    {context}
 
-    context = "\n\n".join(formatted_components)
+    Question: {question}
 
-    prompt = f"""Based on the following inventory data:
-
-            {context}
-
-            Answer the question: {question}
-
-            You are an intelligent assistant for the inventory management system of a lab or organization. Your job is to provide accurate and concise one-line answers to queries about inventory items, including their current location, available quantity, specifications, and technical functions related to electronic components.
-            When stating quantities, always provide the units as integers (e.g., 2 units, NOT 2.0 units).
-            
-            Answer clearly, referring to the inventory data, and keep the answer strictly to one line only — no extra explanations or sentences beyond that single line.
-            
-            If the question is NOT related to context provided, respond ONLY with:
-
-            "I can't help with that."
-
-            Do NOT add any explanations, reasoning, or extra text."""
+    Provide a concise one-line answer about the inventory item's location, quantity, or specifications. If not related to inventory, respond: "I can't help with that." """
         
     response = llm.invoke(prompt)
     answer = response.content.strip()
     return answer
 
-model_path = "models/vosk-model"
-
-model = Model(model_path)
-pa = pyaudio.PyAudio()
-RATE = 16000 
-audio_stream = pa.open(rate=RATE,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=4096)
-
-whisper_model = whisper.load_model("small")
-
 def listen_for_wake_word():
     print("Listening for wake word ('sandy')...")
-    rec = KaldiRecognizer(model, RATE)
+    rec = KaldiRecognizer(vosk_model, RATE)
     rec.SetWords(True)
     
     while True:
@@ -157,14 +126,17 @@ def record_command(duration=5, rate=16000):
     stream.close()
 
     audio_data = b''.join(frames)
-
-    audio_np = np.frombuffer(audio_data, np.int16).astype(np.float32) / 32768.0
-    result = whisper_model.transcribe(audio_np, language='en')
-    text = result.get("text", "").strip()
-    print(f"Recognized command: {text}")
-    return text
-
-print("Inventory voice assistant started. Say 'sandy' to wake.")
+    audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+    
+    try:
+        text, metadata = whisper_transcriber.transcribe(audio_np)
+        logger.info(f"Transcription metadata: {metadata}")
+        print(f"User Query: {text}")
+        return text
+    except Exception as e:
+        logger.error(f"Transcription failed: {e}")
+        print(f"Transcription error: {e}")
+        return ""
 
 try:
     while True:
