@@ -20,31 +20,20 @@ model_path = "models/vosk-model"
 
 print("Loading models into memory...")
 
-print("1/5 Loading RAG processor...")
+print("Loading RAG processor...")
 rag_processor = RAGProcessor(csv_file_path, chroma_directory)
 
-print("2/5 Loading LLM model...")
+print("Loading LLM...")
 llm = ChatOllama(model="qwen2.5:0.5b-instruct-q4_0")
 
-print("3/5 Loading Vosk model...")
+print("Loading Vosk model...")
 vosk_model = Model(model_path)
 
-print("4/5 Loading optimized Whisper model...")
-whisper_transcriber = STT(
-    model_size="base",
-    device=None,  
-    compute_type=None,
-    beam_size=1,
-    sample_rate=16000
-)
+print("Loading optimized Whisper model...")
+whisper_transcriber = STT(model_size="base",device=None,compute_type=None,beam_size=1,sample_rate=16000)
 
-print("5/5 Loading Kokoro TTS model into memory...")
-tts_client = TTS(
-    lang_code='a',
-    voice="af_sky",
-    sample_rate=24000,
-    speed=1.0
-)
+print("Loading Kokoro TTS model into memory...")
+tts_client = TTS(lang_code='a',voice="af_sky",sample_rate=24000,speed=1.0)
 
 print("All models loaded successfully!")
 
@@ -52,13 +41,7 @@ print("Initializing audio system...")
 pa = pyaudio.PyAudio()
 RATE = 16000 
 CHUNK_SIZE = 2048
-audio_stream = pa.open(
-    rate=RATE,
-    channels=1,
-    format=pyaudio.paInt16,
-    input=True,
-    frames_per_buffer=CHUNK_SIZE
-)
+audio_stream = pa.open(rate=RATE,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=CHUNK_SIZE)
 
 print("Audio system initialized.")
 print("Vector database ready.")
@@ -81,10 +64,8 @@ def speak(text):
         print(f"TTS Error: {e}")
 
 def query_inventory(question):
-    # Get inventory data from RAG processor
     context = rag_processor.query_inventory(question)
     
-    # Create prompt for LLM
     prompt = f"""Inventory data:
     {context}
 
