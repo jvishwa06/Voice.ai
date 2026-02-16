@@ -827,7 +827,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Vosk**: Lightweight speech recognition
 
 ---
-
-**Last Updated**: February 2026  
-**Version**: 0.1.0  
-**Maintained by**: AI Labs Team
