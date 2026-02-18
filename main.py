@@ -4,6 +4,9 @@ import numpy as np
 import json
 import tempfile
 import logging
+import zipfile
+import urllib.request
+import subprocess
 from vosk import Model, KaldiRecognizer
 from langchain_ollama import ChatOllama
 
@@ -18,15 +21,47 @@ csv_file_path = "data/data.csv"
 chroma_directory = "chroma_db"
 model_path = "models/vosk-model"
 
+VOSK_MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip"
+VOSK_MODEL_NAME = "vosk-model-small-en-us-0.15"
+
+def download_vosk_model():
+    if os.path.exists(model_path) and os.listdir(model_path):
+        return
+    print(f"Vosk model not found at '{model_path}'. Downloading...")
+    os.makedirs("models", exist_ok=True)
+    zip_path = os.path.join("models", f"{VOSK_MODEL_NAME}.zip")
+    urllib.request.urlretrieve(VOSK_MODEL_URL, zip_path)
+    print("Extracting model...")
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall("models")
+    os.rename(os.path.join("models", VOSK_MODEL_NAME), model_path)
+    os.remove(zip_path)
+    print("Vosk model downloaded and ready.")
+
+OLLAMA_MODEL = "qwen2.5:0.5b-instruct-q4_0"
+
+def ensure_ollama_model():
+    try:
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
+        if OLLAMA_MODEL not in result.stdout:
+            print(f"Ollama model '{OLLAMA_MODEL}' not found. Pulling...")
+            subprocess.run(["ollama", "pull", OLLAMA_MODEL], check=True)
+            print(f"Ollama model '{OLLAMA_MODEL}' pulled successfully.")
+    except FileNotFoundError:
+        print("ERROR: Ollama is not installed. Please install it from https://ollama.com")
+        raise
+
 print("Loading models into memory...")
 
 print("Loading RAG processor...")
 rag_processor = RAGProcessor(csv_file_path, chroma_directory)
 
 print("Loading LLM...")
-llm = ChatOllama(model="qwen2.5:0.5b-instruct-q4_0")
+ensure_ollama_model()
+llm = ChatOllama(model=OLLAMA_MODEL)
 
 print("Loading Vosk model...")
+download_vosk_model()
 vosk_model = Model(model_path)
 
 print("Loading optimized Whisper model...")
@@ -41,14 +76,39 @@ print("Initializing audio system...")
 pa = pyaudio.PyAudio()
 RATE = 16000 
 CHUNK_SIZE = 2048
-audio_stream = pa.open(rate=RATE,channels=1,format=pyaudio.paInt16,input=True,frames_per_buffer=CHUNK_SIZE)
+
+def init_audio_stream():
+    # List available input devices
+    default_idx = None
+    print("Available input devices:")
+    for i in range(pa.get_device_count()):
+        info = pa.get_device_info_by_index(i)
+        if info["maxInputChannels"] > 0:
+            print(f"  [{i}] {info['name']} (inputs: {info['maxInputChannels']})")
+            if default_idx is None:
+                default_idx = i
+    if default_idx is None:
+        raise RuntimeError("No audio input device found. Please connect a microphone.")
+    
+    try:
+        stream = pa.open(rate=RATE, channels=1, format=pyaudio.paInt16,
+                         input=True, frames_per_buffer=CHUNK_SIZE,
+                         input_device_index=default_idx)
+        return stream
+    except OSError as e:
+        print(f"Failed to open device [{default_idx}]: {e}")
+        print("Retrying with system default device...")
+        stream = pa.open(rate=RATE, channels=1, format=pyaudio.paInt16,
+                         input=True, frames_per_buffer=CHUNK_SIZE)
+        return stream
+
+audio_stream = init_audio_stream()
 
 print("Audio system initialized.")
 print("Vector database ready.")
 print("All systems initialized. Voice assistant is ready!")
 
 def speak(text):
-    """Use optimized TTS client for text-to-speech."""
     try:
         audio_data = tts_client.text_to_speech(text)
         
@@ -134,6 +194,9 @@ except KeyboardInterrupt:
     print("Exiting program...")
 
 finally:
-    audio_stream.stop_stream()
-    audio_stream.close()
+    try:
+        audio_stream.stop_stream()
+        audio_stream.close()
+    except OSError:
+        pass
     pa.terminate()
